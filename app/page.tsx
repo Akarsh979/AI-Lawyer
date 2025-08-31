@@ -2,7 +2,7 @@
 import { ModeToggle } from "@/components/modetoggle";
 import ReportComponent from "@/components/reportComponent";
 import { Button } from "@/components/ui/button";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Settings } from "lucide-react";
 
 function HomeComponent(){
