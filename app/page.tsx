@@ -1,11 +1,21 @@
 'use client'
+import ChatComponent from "@/components/chatComponent";
 import { ModeToggle } from "@/components/modetoggle";
 import ReportComponent from "@/components/reportComponent";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Settings } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 function HomeComponent(){
+  
+  const [reportData,setReportData] = useState("");
+  const onReportConfirmation = (data: string) =>{
+     setReportData(data);
+     toast('Updated!');
+  }
+   
   return (
     <div className="grid h-screen w-full"> 
       <div className="flex flex-col">
@@ -21,11 +31,20 @@ function HomeComponent(){
               <DrawerHeader>
                 <DrawerTitle>File Upload</DrawerTitle>
               </DrawerHeader>
-              <ReportComponent/>
+              <ReportComponent onReportConfirmation={onReportConfirmation}/>
             </DrawerContent>
           </Drawer>
         </div>
         </header>
+
+        <main className="grid flex-1 gap-4 overflow-auto p-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="hidden md:flex flex-col">
+            <ReportComponent onReportConfirmation={onReportConfirmation} />
+          </div>
+          <div className="lg:col-span-2">
+            <ChatComponent reportData={reportData} />
+          </div>
+        </main>
       </div>
     </div>
   )
