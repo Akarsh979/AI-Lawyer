@@ -5,7 +5,11 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { toast } from "sonner";
 
-const ReportComponent = () => {
+type Props = {
+   onReportConfirmation: (data: string) => void
+}
+
+const ReportComponent = ({ onReportConfirmation }: Props) => {
   const [base64Data, setBase64Data] = useState("");
   const [reportData, setReportData] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -63,29 +67,42 @@ const ReportComponent = () => {
     }
   }
 
-  async function extractDetails(): Promise<void> {
-    if (!base64Data) {
-      toast.error("Upload a valid document");
-      return;
-    }
+async function extractDetails(): Promise<void> {
+  if (!base64Data) {
+    toast.error("Upload a valid document");
+    return;
+  }
 
+  try {
     setIsLoading(true);
-    const response = await fetch("api/extractReportGemini", {
+
+    const response = await fetch("/api/extractReportGemini", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        base64: base64Data,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ base64: base64Data }),
     });
 
     if (response.ok) {
       const reportText = await response.text();
       setReportData(reportText);
-      setIsLoading(false);
+    } else {
+      let errorMessage = "Something went wrong. Please try again.";
+      try {
+        const errJson = await response.json();
+        if (errJson?.error) errorMessage = errJson.error;
+      } catch(e) {
+        // fallback if backend didn't return JSON
+        errorMessage = `Request failed with status ${response.status}`;
+      }
+      toast.error(errorMessage);
     }
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    toast.error("Network error. Please check your connection.");
+  } finally {
+    setIsLoading(false);
   }
+}
 
   return (
     <div className="grid w-full items-start gap-6 overflow-auto p-4 pt-0">
@@ -115,7 +132,7 @@ const ReportComponent = () => {
             setReportData(e.target.value);
           }}
         />
-        <Button variant={"destructive"} className="bg-[#D90013]">
+        <Button onClick = {()=>onReportConfirmation(reportData)} variant={"destructive"} className="bg-[#D90013]">
           2. Looks Good
         </Button>
       </fieldset>
