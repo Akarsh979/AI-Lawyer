@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   ];
 
   async function callGeminiWithRetry(
-    retries = 3,
+    retries = 5,
     delay = 1000
   ): Promise<GenerateContentResponse> {
     for (let i = 0; i < retries; i++) {
