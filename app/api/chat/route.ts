@@ -1,23 +1,42 @@
-import { Message } from "ai/react";
+// import { Message } from "ai/react";
+import { streamText, UIMessage, LanguageModel } from 'ai';
 import { Pinecone } from '@pinecone-database/pinecone'
 import { queryPineconeVectorStore } from "@/utils";
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { LanguageModelV1, streamText } from 'ai';
+// import { LanguageModelV1, streamText } from 'ai';
 
 const google = createGoogleGenerativeAI({
     baseURL: 'https://generativelanguage.googleapis.com/v1beta',
     apiKey: process.env.GEMINI_API_KEY
 });
 
-const model = google('gemini-1.5-flash');
+const model = google('gemini-2.5-flash');
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
 export async function POST(req: Request, res: Response){
    const reqBody = await req.json();
-   const messages: Message[] = reqBody.messages;
-   const userQuestion = messages[messages.length - 1].content;
-   const reportData = reqBody.data.reportData;
+   
+   const messages: UIMessage[] = reqBody.messages;
+   messages.map((m)=>console.log(m.parts));
+
+  const lastMessage = messages[messages.length - 1];
+  const firstPart = lastMessage.parts[0];
+  
+  let userQuestion; 
+
+  if (firstPart?.type === "text") {
+    userQuestion = firstPart.text;
+  } else {
+    userQuestion = "";
+  }
+
+  console.log("User Question: ",userQuestion);
+
+   const reportData = reqBody.reportData;
 
    const searchQuey = `Legal Contract or Agreement says: \n${reportData} \n\n ${userQuestion}`;
 
@@ -61,7 +80,7 @@ export async function POST(req: Request, res: Response){
    \n\n**Answer:**`;
    
    // Retry wrapper for 429 rate limit errors
-   async function safeStreamText( model: LanguageModelV1, prompt: string ) {
+   async function safeStreamText( model: LanguageModel, prompt: string ) {
      let delay = 2000; // 2s
      for (let i = 0; i < 3; i++) {
        try {
@@ -92,5 +111,7 @@ export async function POST(req: Request, res: Response){
    //    prompt: finalPrompt
    // });
 
-   return result.toDataStreamResponse();
+   return result.toUIMessageStreamResponse();
+
+  // return new Response('dummy response',{status: 200});
 }
