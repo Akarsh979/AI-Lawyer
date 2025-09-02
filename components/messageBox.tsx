@@ -1,3 +1,4 @@
+import Markdown from "./markDown";
 import { Card, CardContent, CardFooter } from "./ui/card";
 
 type Props = {
@@ -9,7 +10,7 @@ const MessageBox = ({role,content}: Props) => {
   return (
    <Card>
       <CardContent className="p-6 text-sm">
-        {content}
+        <Markdown content={content}/>
       </CardContent>
       {role !== "user" && (
         <CardFooter className="border-t bg-muted/50 px-6 py-3 text-xs text-muted-foreground">
