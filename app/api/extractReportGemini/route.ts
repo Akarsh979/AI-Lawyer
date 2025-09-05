@@ -1,4 +1,9 @@
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
+import { NextRequest } from "next/server";
+
+interface GeminiError extends Error {
+  status?: number;   
+}
 
 const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY!});
 
@@ -27,7 +32,7 @@ Make sure to include the document type/title, key clauses, potential risks, and 
 //    return new Response(response.text, {status: 200});
 // }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const { base64 } = await req.json();
   const filePart = fileToGenerativePart(base64);
 
@@ -46,16 +51,18 @@ export async function POST(req: Request) {
           model: "gemini-2.5-pro",
           contents,
         });
-      } catch (err: any) {
+      } catch (err) {
+        const error = err as GeminiError;
+
         // Only retry on 503 (model overloaded)
-        if (err.status === 503 && i < retries - 1) {
+        if (error.status === 503 && i < retries - 1) {
           console.warn(
             `Gemini overloaded, retrying in ${delay}ms... (attempt ${i + 1})`
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
           delay *= 2; // exponential backoff
         } else {
-          throw err;
+          throw error;
         }
       }
     }
@@ -67,16 +74,17 @@ export async function POST(req: Request) {
   try {
     const response = await callGeminiWithRetry();
     return new Response(response.text, { status: 200 });
-  } catch (err: any) {
-    console.error("Gemini request failed:", err);
+  } catch (err) {
+    const error = err as GeminiError;
+    console.error("Gemini request failed:", error);
     return new Response(
       JSON.stringify({
         error:
-          err.status === 503
+          error.status === 503
             ? "Gemini is overloaded, please try again later."
             : "Unexpected error occurred.",
       }),
-      { status: err.status || 500 }
+      { status: error.status || 500 }
     );
   }
 }

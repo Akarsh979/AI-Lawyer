@@ -3,7 +3,13 @@ import { streamText, UIMessage, LanguageModel } from 'ai';
 import { Pinecone } from '@pinecone-database/pinecone'
 import { queryPineconeVectorStore } from "@/utils";
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { NextRequest } from 'next/server';
 // import { LanguageModelV1, streamText } from 'ai';
+
+interface StreamTextError extends Error {
+  statusCode?: number;
+}
+
 
 const google = createGoogleGenerativeAI({
     baseURL: 'https://generativelanguage.googleapis.com/v1beta',
@@ -17,7 +23,7 @@ export const maxDuration = 30;
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
-export async function POST(req: Request, res: Response){
+export async function POST(req: NextRequest){
    const reqBody = await req.json();
    
    const messages: UIMessage[] = reqBody.messages;
@@ -85,13 +91,14 @@ export async function POST(req: Request, res: Response){
      for (let i = 0; i < 3; i++) {
        try {
          return await streamText({ model, prompt });
-       } catch (err: any) {
-         if (err.statusCode === 429) {
+       } catch (err) {
+         const error = err as StreamTextError;
+         if (error.statusCode === 429) {
            console.warn(`Rate limit hit. Retrying in ${delay / 1000}s...`);
            await new Promise((r) => setTimeout(r, delay));
            delay *= 2;
          } else {
-           throw err;
+           throw error;
          }
        }
      }
@@ -101,7 +108,8 @@ export async function POST(req: Request, res: Response){
    let result;
    try {
       result = await safeStreamText( model, finalPrompt);
-   } catch (error: any) {
+   } catch (err) {
+      const error = err as StreamTextError;
       console.log("Safe Stream Failed", error.message);
       return new Response("Some error occured",{status: 500});
    }

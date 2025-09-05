@@ -92,6 +92,7 @@ async function extractDetails(): Promise<void> {
         if (errJson?.error) errorMessage = errJson.error;
       } catch(e) {
         // fallback if backend didn't return JSON
+        console.error(e);
         errorMessage = `Request failed with status ${response.status}`;
       }
       toast.error(errorMessage);
