@@ -16,9 +16,11 @@ function ChatComponent({ reportData }: Props) {
   return (
     <div className="h-full bg-muted/50 relative flex flex-col min-h-[50vh] rounded-xl p-4 gap-4">
       <Badge
-        variant={"outline"}
-        className={`absolute right-3 top-1.5 ${reportData && "bg-[#00B612]"}`}
+        variant={reportData ? "default" : "outline"}
+        className={`absolute right-3 top-1.5 flex items-center gap-2 px-3 py-1 rounded-full shadow-md text-xs font-semibold transition-colors duration-200 ${reportData ? "bg-[#00B612] text-white border-none" : "bg-background border"}`}
+        aria-label={reportData ? "Report Added" : "No Report Added"}
       >
+        <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: reportData ? '#fff' : '#888' }}></span>
         {reportData ? "Report Added" : "No Report Added"}
       </Badge>
 
@@ -62,13 +64,16 @@ function ChatComponent({ reportData }: Props) {
           onChange={e => setInput(e.currentTarget.value)}
           placeholder="Type your query here..."
           className="min-h-22 resize-none border-0 p-3 pr-10 shadow-none focus-visible:ring-0"
+          maxLength={1000}
+          aria-label="Chat input"
         />
-
+        <span className="absolute left-3 bottom-2 text-xs text-muted-foreground">{input.length}/1000</span>
         <Button
-          disabled={isLoading}
+          disabled={isLoading || !input.trim()}
           type="submit"
           size="sm"
           className="absolute bottom-2 right-2"
+          aria-label="Send message"
         >
           {isLoading ? "Analyzing..." : "3. Ask"}
           {isLoading ? (
